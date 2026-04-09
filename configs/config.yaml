@@ -101,10 +101,12 @@ keypoint_proposer:
   seed: *seed
 
 constraint_generator:
-  model: chatgpt-4o-latest
+  model: qwen3-vl-flash-2026-01-22
   temperature: 0.0
   max_tokens: 2048
-
+  api_key: "sk-e653c57fb2de45ed973d565640b08a92"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  
 visualizer:
   bounds_min: *bounds_min
   bounds_max: *bounds_max
