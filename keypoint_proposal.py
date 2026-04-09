@@ -5,16 +5,21 @@ from torch.nn.functional import interpolate
 from kmeans_pytorch import kmeans
 from utils import filter_points_by_bounds
 from sklearn.cluster import MeanShift
+from transformers import AutoModel
 
 class KeypointProposer:
     def __init__(self, config):
         self.config = config
         self.device = torch.device(self.config['device'])
-        self.dinov2 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14').eval().to(self.device)
+        model_path = "/home/ypf/.cache/modelscope/hub/models/facebook/dinov3-vitb16-pretrain-lvd1689m"
+        self.dinov3 = AutoModel.from_pretrained(model_path).eval().to(self.device)
+        self.patch_size = 16
+        self.num_prefix_tokens = 5  # 1 CLS + 4 register tokens
+        self.img_mean = torch.tensor([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1).to(self.device)
+        self.img_std = torch.tensor([0.229, 0.224, 0.225]).reshape(1, 3, 1, 1).to(self.device)        
         self.bounds_min = np.array(self.config['bounds_min'])
         self.bounds_max = np.array(self.config['bounds_max'])
         self.mean_shift = MeanShift(bandwidth=self.config['min_dist_bt_keypoints'], bin_seeding=True, n_jobs=32)
-        self.patch_size = 14  # dinov2
         np.random.seed(self.config['seed'])
         torch.manual_seed(self.config['seed'])
         torch.cuda.manual_seed(self.config['seed'])
@@ -91,10 +96,11 @@ class KeypointProposer:
         patch_h = shape_info['patch_h']
         patch_w = shape_info['patch_w']
         # get features
-        img_tensors = torch.from_numpy(transformed_rgb).permute(2, 0, 1).unsqueeze(0).to(self.device)  # float32 [1, 3, H, W]
+        img_tensors = torch.from_numpy(transformed_rgb).permute(2, 0, 1).unsqueeze(0).to(self.device)
         assert img_tensors.shape[1] == 3, "unexpected image shape"
-        features_dict = self.dinov2.forward_features(img_tensors)
-        raw_feature_grid = features_dict['x_norm_patchtokens']  # float32 [num_cams, patch_h*patch_w, feature_dim]
+        img_tensors = (img_tensors - self.img_mean) / self.img_std
+        outputs = self.dinov3(pixel_values=img_tensors)
+        raw_feature_grid = outputs.last_hidden_state[:, self.num_prefix_tokens:, :]
         raw_feature_grid = raw_feature_grid.reshape(1, patch_h, patch_w, -1)  # float32 [num_cams, patch_h, patch_w, feature_dim]
         # compute per-point feature using bilinear interpolation
         interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # float32 [num_cams, feature_dim, patch_h, patch_w]
