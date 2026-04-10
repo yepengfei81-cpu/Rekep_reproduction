@@ -36,6 +36,16 @@ class KeypointProposer:
         candidate_keypoints = candidate_keypoints[within_space]
         candidate_pixels = candidate_pixels[within_space]
         candidate_rigid_group_ids = candidate_rigid_group_ids[within_space]
+        # filter depth outliers
+        if len(candidate_keypoints) > 2:
+            z_vals = candidate_keypoints[:, 2]
+            z_median = np.median(z_vals)
+            z_mad = np.median(np.abs(z_vals - z_median))
+            z_threshold = max(z_mad * 5.0, 0.05)
+            valid_z = np.abs(z_vals - z_median) < z_threshold
+            candidate_keypoints = candidate_keypoints[valid_z]
+            candidate_pixels = candidate_pixels[valid_z]
+            candidate_rigid_group_ids = candidate_rigid_group_ids[valid_z]
         # merge close points by clustering in cartesian space
         merged_indices = self._merge_clusters(candidate_keypoints)
         candidate_keypoints = candidate_keypoints[merged_indices]
@@ -48,7 +58,7 @@ class KeypointProposer:
         candidate_rigid_group_ids = candidate_rigid_group_ids[sort_idx]
         # project keypoints to image space
         projected = self._project_keypoints_to_img(rgb, candidate_pixels, candidate_rigid_group_ids, masks, features_flat)
-        return candidate_keypoints, projected
+        return candidate_keypoints, candidate_pixels, projected
 
     def _preprocess(self, rgb, points, masks):
         # convert masks to binary masks

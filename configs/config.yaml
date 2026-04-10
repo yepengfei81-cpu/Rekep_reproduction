@@ -6,8 +6,8 @@ main:
   interpolate_rot_step_size: &interpolate_rot_step_size 0.34  # about 20 degrees
   grasp_depth: 0.10
   constraint_tolerance: 0.10  # for backtracking
-  bounds_min: &bounds_min [-0.45, -0.75, 0.698]
-  bounds_max: &bounds_max [0.10, 0.60, 1.2]
+  bounds_min: &bounds_min [0.15, -0.22, -0.06]
+  bounds_max: &bounds_max [0.57, 0.35, 0.49]
   sdf_voxel_size: 0.01
   vlm_camera: 0
   action_steps_per_iter: 5
@@ -75,21 +75,21 @@ path_solver:
   opt_interpolate_pos_step_size: 0.02  # controls the density of collision checking inside optimization
   opt_interpolate_rot_step_size: 0.10
   max_collision_points: 60
-  sampling_maxfun: 5000
+  sampling_maxfun: 2000
   bounds_min: *bounds_min
   bounds_max: *bounds_max
   constraint_tolerance: 0.0001
   minimizer_options:
-    maxiter: 200
+    maxiter: 100
 
 subgoal_solver:
   bounds_min: *bounds_min
   bounds_max: *bounds_max
-  sampling_maxfun: 5000
+  sampling_maxfun: 2000
   max_collision_points: 60
   constraint_tolerance: 0.0001
   minimizer_options:
-    maxiter: 200
+    maxiter: 100
 
 keypoint_proposer:
   num_candidates_per_mask: 5
@@ -103,10 +103,24 @@ keypoint_proposer:
 constraint_generator:
   model: qwen3-vl-flash-2026-01-22
   temperature: 0.0
-  max_tokens: 2048
+  max_tokens: 8192
   api_key: "sk-e653c57fb2de45ed973d565640b08a92"
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-  
+
+real_env:
+  calib_dir: "/home/ypf/qiuzhiarm_LLM/calibration/play"
+  camera_serial: "230422271972"
+  d405_depth_raw_to_mm: 0.1
+  home_joint: [-0.0612, -1.0550, 0.8829, -1.2343, 1.0351, 0.7597]
+  home_ee_pose: [0.343311, 0.049176, 0.111734, -0.165697, 0.491898, 0.260373, 0.814117]
+  arm_port: 50050
+  gripper_open_width: 1.0
+  gripper_close_width: 0.0
+  gripper_grasp_min: 0.01
+  gripper_grasp_threshold: 0.04
+  gripper_wait_sec: 0.5
+  move_wait_sec: 0.3
+    
 visualizer:
   bounds_min: *bounds_min
   bounds_max: *bounds_max

@@ -75,6 +75,15 @@ class ConstraintGenerator:
                     f.write("\n".join(functions[name]) + "\n\n")
         print(f"Constraints saved to {save_dir}")
     
+    def _extract_code_block(self, output):
+        """Extract the Python code block from VLM raw output."""
+        import re
+        match = re.search(r'```python\s*\n(.*?)```', output, re.DOTALL)
+        if match:
+            return match.group(1)
+        # fallback: return original output
+        return output
+        
     def _parse_other_metadata(self, output):
         data_dict = dict()
         # find num_stages
@@ -138,11 +147,14 @@ class ConstraintGenerator:
         # build prompt
         messages = self._build_prompt(image_path, instruction)
         # stream back the response
-        stream = self.client.chat.completions.create(model=self.config['model'],
-                                                        messages=messages,
-                                                        temperature=self.config['temperature'],
-                                                        max_tokens=self.config['max_tokens'],
-                                                        stream=True)
+        stream = self.client.chat.completions.create(
+            model=self.config['model'],
+            messages=messages,
+            temperature=self.config['temperature'],
+            max_tokens=self.config['max_tokens'],
+            stream=True,
+            extra_body={"enable_thinking": False}, 
+        )
         output = ""
         start = time.time()
         for chunk in stream:
@@ -153,9 +165,11 @@ class ConstraintGenerator:
         # save raw output
         with open(os.path.join(self.task_dir, 'output_raw.txt'), 'w') as f:
             f.write(output)
+        # extract code block from VLM output (ignore analysis text)
+        code_block = self._extract_code_block(output)
         # parse and save constraints
-        self._parse_and_save_constraints(output, self.task_dir)
+        self._parse_and_save_constraints(code_block, self.task_dir)
         # save metadata
-        metadata.update(self._parse_other_metadata(output))
+        metadata.update(self._parse_other_metadata(code_block))
         self._save_metadata(metadata)
         return self.task_dir
