@@ -82,20 +82,33 @@ class KeypointProposer:
     
     def _project_keypoints_to_img(self, rgb, candidate_pixels, candidate_rigid_group_ids, masks, features_flat):
         projected = rgb.copy()
-        # overlay keypoints on the image
-        for keypoint_count, pixel in enumerate(candidate_pixels):
+        # 每个 rigid_group 一种颜色
+        group_colors = [
+            (220, 50,  50),   # 红
+            (50,  200, 50),   # 绿
+            (50,  50,  220),  # 蓝
+            (220, 150, 50),   # 橙
+            (150, 50,  220),  # 紫
+            (50,  200, 200),  # 青
+        ]
+        for keypoint_count, (pixel, gid) in enumerate(zip(candidate_pixels, candidate_rigid_group_ids)):
+            color = group_colors[gid % len(group_colors)]
             displayed_text = f"{keypoint_count}"
             text_length = len(displayed_text)
-            # draw a box
             box_width = 30 + 10 * (text_length - 1)
             box_height = 30
-            cv2.rectangle(projected, (pixel[1] - box_width // 2, pixel[0] - box_height // 2), (pixel[1] + box_width // 2, pixel[0] + box_height // 2), (255, 255, 255), -1)
-            cv2.rectangle(projected, (pixel[1] - box_width // 2, pixel[0] - box_height // 2), (pixel[1] + box_width // 2, pixel[0] + box_height // 2), (0, 0, 0), 2)
-            # draw text
-            org = (pixel[1] - 7 * (text_length), pixel[0] + 7)
-            color = (255, 0, 0)
-            cv2.putText(projected, str(keypoint_count), org, cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-            keypoint_count += 1
+            # 用该物体的颜色画边框
+            cv2.rectangle(projected,
+                        (pixel[1] - box_width // 2, pixel[0] - box_height // 2),
+                        (pixel[1] + box_width // 2, pixel[0] + box_height // 2),
+                        color, -1)
+            cv2.rectangle(projected,
+                        (pixel[1] - box_width // 2, pixel[0] - box_height // 2),
+                        (pixel[1] + box_width // 2, pixel[0] + box_height // 2),
+                        (0, 0, 0), 2)
+            org = (pixel[1] - 7 * text_length, pixel[0] + 7)
+            cv2.putText(projected, str(keypoint_count), org,
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         return projected
 
     @torch.inference_mode()

@@ -52,7 +52,7 @@ def objective(opt_vars,
     cost = 0
     # collision cost
     if collision_points_centered is not None:
-        collision_cost = 0.5 * calculate_collision_cost(poses_homo[start_idx:end_idx], sdf_func, collision_points_centered, 0.20)
+        collision_cost = 0.5 * calculate_collision_cost(poses_homo[start_idx:end_idx], sdf_func, collision_points_centered, 0.03)
         debug_dict['collision_cost'] = collision_cost
         cost += collision_cost
 
@@ -212,13 +212,19 @@ class PathSolver:
         # calculate an appropriate number of control points, including start and goal
         num_control_points = get_linear_interpolation_steps(start_pose, end_pose, self.config['opt_pos_step_size'], self.config['opt_rot_step_size'])
         num_control_points = np.clip(num_control_points, 3, 6)
+        start_pose_orig = start_pose.copy()
         # transform to euler representation
         start_pose = np.concatenate([start_pose[:3], T.quat2euler(start_pose[3:])])
         end_pose = np.concatenate([end_pose[:3], T.quat2euler(end_pose[3:])])
 
         # bounds for decision variables
-        og_bounds = [(b_min, b_max) for b_min, b_max in zip(self.config['bounds_min'], self.config['bounds_max'])] + \
-                    [(-np.pi, np.pi) for _ in range(3)]
+        start_euler = T.quat2euler(start_pose_orig[3:])  # 用原始quat格式
+        rot_range = 0.52  # ±30度
+        rot_bounds_min = start_euler - rot_range
+        rot_bounds_max = start_euler + rot_range
+        og_bounds = [(b_min, b_max) for b_min, b_max in zip(
+            np.concatenate([self.config['bounds_min'], rot_bounds_min]),
+            np.concatenate([self.config['bounds_max'], rot_bounds_max]))]
         og_bounds *= (num_control_points - 2)
         og_bounds = np.array(og_bounds, dtype=np.float64)
         bounds = [(-1, 1)] * len(og_bounds)

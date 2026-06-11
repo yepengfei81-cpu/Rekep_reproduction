@@ -2,3 +2,12 @@
 **/__pycache__/**
 **/*.egg-info/
 *.egg
+
+# 图片产物（推理可视化、调试图等）
+*.png
+*.jpg
+*.jpeg
+
+# vlm_query 下只保留 prompt_template.txt，其余（VLM 运行产物）全部忽略
+vlm_query/*
+!vlm_query/prompt_template.txt

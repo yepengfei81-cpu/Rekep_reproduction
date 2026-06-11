@@ -35,7 +35,7 @@ def objective(opt_vars,
     cost = 0
     # collision cost
     if collision_points_centered is not None:
-        collision_cost = 0.8 * calculate_collision_cost(opt_pose_homo[None], sdf_func, collision_points_centered, 0.10)
+        collision_cost = 0.8 * calculate_collision_cost(opt_pose_homo[None], sdf_func, collision_points_centered, 0.02)
         debug_dict['collision_cost'] = collision_cost
         cost += collision_cost
 
@@ -218,8 +218,10 @@ class SubgoalSolver:
         # normalize opt variables to [0, 1]
         pos_bounds_min = self.config['bounds_min']
         pos_bounds_max = self.config['bounds_max']
-        rot_bounds_min = np.array([-np.pi, -np.pi, -np.pi])  # euler angles
-        rot_bounds_max = np.array([np.pi, np.pi, np.pi])  # euler angles
+        curr_euler = T.quat2euler(ee_pose[3:])
+        rot_range = 0.52  # ±30度
+        rot_bounds_min = curr_euler - rot_range
+        rot_bounds_max = curr_euler + rot_range
         og_bounds = [(b_min, b_max) for b_min, b_max in zip(np.concatenate([pos_bounds_min, rot_bounds_min]), np.concatenate([pos_bounds_max, rot_bounds_max]))]
         bounds = [(-1, 1)] * len(og_bounds)
         if not from_scratch and self.last_opt_result is not None:

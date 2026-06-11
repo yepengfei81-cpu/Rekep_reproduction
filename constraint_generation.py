@@ -76,12 +76,10 @@ class ConstraintGenerator:
         print(f"Constraints saved to {save_dir}")
     
     def _extract_code_block(self, output):
-        """Extract the Python code block from VLM raw output."""
         import re
-        match = re.search(r'```python\s*\n(.*?)```', output, re.DOTALL)
-        if match:
-            return match.group(1)
-        # fallback: return original output
+        matches = re.findall(r'```python\s*\n(.*?)```', output, re.DOTALL)
+        if matches:
+            return matches[-1]   # 取最后一个，而不是第一个
         return output
         
     def _parse_other_metadata(self, output):
@@ -138,7 +136,8 @@ class ConstraintGenerator:
             save_dir (str): directory where the constraints
         """
         # create a directory for the task
-        fname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + instruction.lower().replace(" ", "_")
+        short_inst = instruction.lower().replace(" ", "_")[:60]  # 最多60字符
+        fname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + short_inst
         self.task_dir = os.path.join(self.base_dir, fname)
         os.makedirs(self.task_dir, exist_ok=True)
         # save query image

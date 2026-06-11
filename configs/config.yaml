@@ -6,7 +6,7 @@ main:
   interpolate_rot_step_size: &interpolate_rot_step_size 0.34  # about 20 degrees
   grasp_depth: 0.10
   constraint_tolerance: 0.10  # for backtracking
-  bounds_min: &bounds_min [0.15, -0.22, -0.06]
+  bounds_min: &bounds_min [0.15, -0.22, -0.065]
   bounds_max: &bounds_max [0.57, 0.35, 0.49]
   sdf_voxel_size: 0.01
   vlm_camera: 0
@@ -92,8 +92,8 @@ subgoal_solver:
     maxiter: 100
 
 keypoint_proposer:
-  num_candidates_per_mask: 5
-  min_dist_bt_keypoints: 0.06
+  num_candidates_per_mask: 8
+  min_dist_bt_keypoints: 0.03
   max_mask_ratio: 0.5
   device: *device
   bounds_min: *bounds_min
@@ -104,7 +104,7 @@ constraint_generator:
   model: qwen3-vl-flash-2026-01-22
   temperature: 0.0
   max_tokens: 8192
-  api_key: "sk-e653c57fb2de45ed973d565640b08a92"
+  api_key: "sk-7ab1079406b8480aa6ba319c49b58c32"
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 real_env:
@@ -117,7 +117,7 @@ real_env:
   gripper_open_width: 1.0
   gripper_close_width: 0.0
   gripper_grasp_min: 0.01
-  gripper_grasp_threshold: 0.04
+  gripper_grasp_threshold: 0.065
   gripper_wait_sec: 0.5
   move_wait_sec: 0.3
     
